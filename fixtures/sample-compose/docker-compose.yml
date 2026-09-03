@@ -1,0 +1,9 @@
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - '18080:80'
+    volumes:
+      - sample_data:/usr/share/nginx/html/data
+volumes:
+  sample_data:

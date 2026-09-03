@@ -1,0 +1,6 @@
+services:
+  web:
+    image: busybox:1.36
+    command: ['sh', '-c', 'echo -n "$FOO" > /tmp/foo && sleep 3600']
+    environment:
+      FOO: ${FOO:-}
