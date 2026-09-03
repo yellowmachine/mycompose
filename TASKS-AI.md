@@ -13,9 +13,9 @@
 **Goal:** Pack builder is testable with no network and no UI.
 
 - [x] A001 Add `deploy_explanations` to `src/lib/server/db/schema.ts` (checks, index, cascade) and generate a Drizzle migration under `drizzle/`
-- [ ] A002 [P] Zod explanation schema + json_schema helper in `src/lib/server/ai/schema.ts` (`cause_class`, `summary`, `evidence`, `next_checks`, `confidence`)
-- [ ] A003 [P] Evidence pack builder `src/lib/server/ai/evidence.ts`: keys-only env, log head+tail (32 KiB / 32 KiB), optional compose excerpt ≤ 64 KiB via `resolveInside`, optional runtime snapshot, optional `compose logs --tail 200` (5s, no follow)
-- [ ] A004 Pack unit tests `tests/unit/evidence.test.ts`: env values never appear; empty log detected; path escape rejected; truncation flags set
+- [x] A002 [P] Zod explanation schema + json_schema helper in `src/lib/server/ai/schema.ts` (`cause_class`, `summary`, `evidence`, `next_checks`, `confidence`)
+- [x] A003 [P] Evidence pack builder `src/lib/server/ai/evidence.ts`: keys-only env, log head+tail (32 KiB / 32 KiB), optional compose excerpt ≤ 64 KiB via `resolveInside`, optional runtime snapshot, optional `compose logs --tail 200` (5s, no follow)
+- [x] A004 Pack unit tests `tests/unit/evidence.test.ts`: env values never appear; empty log detected; path escape rejected; truncation flags set
 
 **Independent test:** `bun run test:unit` covers SC-AI-4.
 
