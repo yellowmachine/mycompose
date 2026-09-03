@@ -143,14 +143,14 @@ If the provider returns prose, the panel still persists a structured row (parse 
 
 ## 12. Locked constraints (AI)
 
-| Constraint                  | Decision                                                                           |
-| --------------------------- | ---------------------------------------------------------------------------------- |
-| Trigger                     | Explicit **Explain** button only                                                   |
-| Effect on runtime           | None                                                                               |
-| Secrets                     | Keys only in the pack                                                              |
-| UI language                 | English, same as SPEC-0                                                            |
-| Provider (when implemented) | SpaceXAI (xAI API, `XAI_API_KEY`, server-side only). Plan spec may name the model. |
-| Panel without a key         | Fully usable; Explain errors                                                       |
+| Constraint                  | Decision                                                                                      |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| Trigger                     | Explicit **Explain** button only                                                              |
+| Effect on runtime           | None                                                                                          |
+| Secrets                     | Keys only in the pack                                                                         |
+| UI language                 | English, same as SPEC-0                                                                       |
+| Provider (when implemented) | Local Ollama, OpenAI-compatible (`OLLAMA_BASE_URL`). SpaceXAI deferred. Plan names the model. |
+| Panel without a model       | Fully usable; Explain errors. P1–P7 do not require Ollama.                                    |
 
 ## 13. Sketch of A2 / A3 (not requirements)
 

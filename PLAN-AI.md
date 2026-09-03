@@ -8,54 +8,57 @@
 
 ## Summary
 
-Add a read-only **Explain** action on a deploy. The operator clicks a button; the panel builds an evidence pack from Postgres (and optionally a capped compose-file excerpt and a one-shot runtime snapshot), calls SpaceXAI (xAI API) **without tools**, persists a structured `deploy_explanations` row, and renders it. Git, Docker, env values, and app/deploy status do not change.
+Add a read-only **Explain** action on a deploy. The operator clicks a button; the panel builds an evidence pack from Postgres (and optionally a capped compose-file excerpt and a one-shot runtime snapshot), calls a **local Ollama** model over the OpenAI-compatible API **without tools**, persists a structured `deploy_explanations` row, and renders it. Git, Docker, env values, and app/deploy status do not change. SpaceXAI / xAI is deferred; swapping the base URL later is a two-line change.
 
 A1 is the whole AI experiment for now. A2 (alarms) and A3 (watch loops) stay unimplemented until a later SPEC replaces SPEC-AI §4 / §12.
 
 ## Technical context
 
-| Item        | Choice                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------- |
-| Provider    | SpaceXAI via xAI API (`https://api.x.ai/v1`)                                                |
-| Key         | `XAI_API_KEY` server-side only (never in the browser bundle)                                |
-| Model       | `grok-4.6` (override with `XAI_MODEL`)                                                      |
-| Client      | `openai` npm package, OpenAI-compatible `baseURL`                                           |
-| Output      | Structured JSON (`response_format` json_schema + Zod). No function calling, no web/X search |
-| Persistence | New `deploy_explanations` table (Drizzle). List newest first                                |
-| Trigger     | Form action `?/explain` on `/apps/<slug>/deploys/<id>`                                      |
-| Tests       | Vitest for the pack builder (no network). E2E uses a stub provider. Live API is opt-in      |
+| Item        | Choice                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------ |
+| Provider    | Local [Ollama](https://ollama.com) OpenAI-compatible API (`http://127.0.0.1:11434/v1`)     |
+| Auth        | None (Ollama ignores the key; send a dummy `ollama` if the client requires one)            |
+| Model       | `llama3.2` (override with `OLLAMA_MODEL`)                                                  |
+| Client      | `openai` npm package, `baseURL` from `OLLAMA_BASE_URL`                                     |
+| Output      | JSON object + Zod. No function calling. Ollama may not honour json_schema; always validate |
+| Persistence | New `deploy_explanations` table (Drizzle). List newest first                               |
+| Trigger     | Form action `?/explain` on `/apps/<slug>/deploys/<id>`                                     |
+| Tests       | Vitest for the pack builder (no network). E2E uses a stub provider. Live Ollama is opt-in  |
 
 ## Constitution check
 
-| Gate                                | Status                                                                |
-| ----------------------------------- | --------------------------------------------------------------------- |
-| Model is not an operator            | Pass — no mutating tools; only insert explanation text                |
-| Trigger is explicit operator action | Pass — Explain button only                                            |
-| Model is not the sensor             | Pass — pack is built from P1–P7 records already stored                |
-| Env values never in the prompt      | Pass — pack builder copies keys only; unit-tested                     |
-| P1–P7 still work without a key      | Pass — missing key fails Explain visibly; rest of the panel unchanged |
-| No A2/A3                            | Pass — no cron, no alarms, no sampler                                 |
-| SPEC-0 §4–§5 untouched              | Pass — still no auth, still button-only deploy, still no proxy        |
+| Gate                                | Status                                                                       |
+| ----------------------------------- | ---------------------------------------------------------------------------- |
+| Model is not an operator            | Pass — no mutating tools; only insert explanation text                       |
+| Trigger is explicit operator action | Pass — Explain button only                                                   |
+| Model is not the sensor             | Pass — pack is built from P1–P7 records already stored                       |
+| Env values never in the prompt      | Pass — pack builder copies keys only; unit-tested                            |
+| P1–P7 still work without Ollama     | Pass — unreachable Ollama fails Explain visibly; rest of the panel unchanged |
+| No A2/A3                            | Pass — no cron, no alarms, no sampler                                        |
+| SPEC-0 §4–§5 untouched              | Pass — still no auth, still button-only deploy, still no proxy               |
 
 ## Key decisions
 
-### D-AI-1 — SpaceXAI, no tools, structured JSON
+### D-AI-1 — Local Ollama, no tools, JSON + Zod
 
-Call `POST https://api.x.ai/v1` through the official OpenAI-compatible client:
+Call the Ollama OpenAI-compatible endpoint from the server only:
 
 ```ts
-new OpenAI({ apiKey: process.env.XAI_API_KEY, baseURL: 'https://api.x.ai/v1' });
+new OpenAI({
+	apiKey: 'ollama',
+	baseURL: process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/v1'
+});
 ```
 
-Model: `grok-4.6`. Optional `XAI_MODEL` for experiments. **Do not** attach tools (`web_search`, function calling, code execution). The model must only see the evidence pack.
+Model: `OLLAMA_MODEL` or `llama3.2`. **Do not** attach tools. The model must only see the evidence pack. Ask for SPEC-AI §9 fields. Prefer `response_format: { type: 'json_object' }` when the daemon accepts it; always parse with Zod. If the body is unusable, still insert a row: `cause_class = unknown`, `summary` from raw text, `raw` stored.
 
-Ask for SPEC-AI §9 fields via JSON Schema (`cause_class` enum, `summary`, `evidence[]`, `next_checks[]`, `confidence`). Validate with Zod after the response. If the body is unusable, still insert a row: `cause_class = unknown`, `summary` from raw text, `raw` stored.
+Ollama must already be running on the host (`ollama serve` + `ollama pull llama3.2`). The panel does not install or pull models.
 
-**Rejected:** Vercel AI SDK — extra surface for one non-streaming call. **Rejected:** sending the pack to the browser to call the API (key leak, pack tampering).
+**Rejected for this slice:** xAI / SpaceXAI — operator wants local inference first; the same OpenAI-compatible client can point at `https://api.x.ai/v1` later. **Rejected:** sending the pack to the browser.
 
 ### D-AI-2 — The HTTP handler may wait (unlike compose)
 
-`compose up` can run for minutes, so deploy is async. An Explain call is one round trip (seconds). The form action **awaits** the provider (timeout **60s**) and re-renders the deploy page with the new row or an error. No job queue, no SSE.
+`compose up` can run for minutes, so deploy is async. An Explain call is one round trip (seconds). The form action **awaits** the provider (timeout **120s**, local models are slower) and re-renders the deploy page with the new row or an error. No job queue, no SSE.
 
 Double-click: disable the button while submitting. No unique inflight index. Multiple explanations per deploy are allowed (SPEC-AI default: **list, newest first**). Re-explain never mutates `deploys.log_text`.
 
@@ -97,9 +100,9 @@ Temperature low (0 or 0.2). Max output tokens bounded (e.g. 1024).
 
 | Condition                        | Behaviour                                                               |
 | -------------------------------- | ----------------------------------------------------------------------- |
-| No `XAI_API_KEY`                 | 400, “Explain is not configured (missing XAI_API_KEY)”                  |
-| Empty log                        | 400, “No log to explain” — no HTTP to xAI                               |
-| Provider 4xx/5xx / timeout / DNS | 502/504, readable error; **no** explanation row                         |
+| Ollama down / connection refused | 502, “Ollama is not reachable at OLLAMA_BASE_URL”                       |
+| Empty log                        | 400, “No log to explain” — no HTTP to Ollama                            |
+| Model missing (404) / timeout    | 502/504, readable error; **no** explanation row                         |
 | Schema mismatch                  | Insert `unknown` + raw; still success from the operator’s point of view |
 
 P1–P7 routes do not import the provider module except the Explain action.
@@ -108,7 +111,7 @@ P1–P7 routes do not import the provider module except the Explain action.
 
 `MYCOMPOSE_AI_STUB=1` (or missing network in unit tests) uses `src/lib/server/ai/stub.ts`: deterministic `cause_class` from log/error_summary keywords (`yaml`/`compose` → `compose`, `not a git`/`ls-remote` → `git`, `no such file` → `compose`, else `unknown`). E2E never needs the public internet (same rule as SPEC-0 tests).
 
-A live check with a real key is **manual** (SC-AI-1 on `fixtures/invalid-compose`).
+A live check with Ollama running is **manual** (SC-AI-1 on `fixtures/invalid-compose`).
 
 ## Data model
 
@@ -123,7 +126,7 @@ A live check with a real key is **manual** (SC-AI-1 on `fixtures/invalid-compose
 | evidence    | jsonb not null                      | `string[]`                  |
 | next_checks | jsonb not null                      | `string[]`                  |
 | confidence  | text not null                       | `low` \| `medium` \| `high` |
-| model       | text not null                       | e.g. `grok-4.6` or `stub`   |
+| model       | text not null                       | e.g. `llama3.2` or `stub`   |
 | raw         | text null                           | provider body for debugging |
 | created_at  | timestamptz not null                | now()                       |
 
@@ -145,21 +148,21 @@ Pages: same deploy log page. History table on the app detail may show a one-line
 src/lib/server/ai/
   evidence.ts      # pack builder (unit-tested)
   schema.ts        # Zod explanation + json_schema
-  provider.ts      # OpenAI-compatible xAI client
+  provider.ts      # OpenAI-compatible Ollama client
   stub.ts          # MYCOMPOSE_AI_STUB
   explain.ts       # orchestrate pack → model → insert
 src/lib/server/db/schema.ts   # + deployExplanations
 src/routes/apps/[slug]/deploys/[id]/
   +page.server.ts  # load explanations; ?/explain
   +page.svelte     # Explain button + list
-.env.example       # XAI_API_KEY, XAI_MODEL
+.env.example       # OLLAMA_BASE_URL, OLLAMA_MODEL, MYCOMPOSE_AI_STUB
 ```
 
 ## Timeouts and limits
 
 | Operation              | Limit                     |
 | ---------------------- | ------------------------- |
-| Provider HTTP          | 60s                       |
+| Provider HTTP          | 120s (local models)       |
 | Compose excerpt        | 64 KiB                    |
 | Log in prompt          | 32 KiB head + 32 KiB tail |
 | Container log snapshot | 200 lines, 5s             |
@@ -168,16 +171,16 @@ src/routes/apps/[slug]/deploys/[id]/
 ## Environment
 
 ```
-XAI_API_KEY=             # required for live Explain
-XAI_MODEL=grok-4.6       # optional
+OLLAMA_BASE_URL=http://127.0.0.1:11434/v1
+OLLAMA_MODEL=llama3.2
 MYCOMPOSE_AI_STUB=0      # 1 in e2e
 ```
 
 ## Testing strategy
 
 - **Unit:** pack builder never contains env values even if `env_snapshot` is `{ POSTGRES_PASSWORD: 'hunter2' }`; empty log short-circuits; head+tail flags; compose path cannot escape repo root.
-- **E2E (stub):** invalid-compose fixture → Explain → `cause_class` compose (or config) and evidence/summary mentions compose/YAML; `docker compose -p mycompose-<slug> ps` identical; `log_text` unchanged after two Explains; missing stub+key shows the configured-error path if we unset both.
-- **Live (manual, has key):** SC-AI-1 / SC-AI-2 / SC-AI-3 on the existing fixtures.
+- **E2E (stub):** invalid-compose fixture → Explain → `cause_class` compose (or config) and evidence/summary mentions compose/YAML; `docker compose -p mycompose-<slug> ps` identical; `log_text` unchanged after two Explains; stub off + Ollama down shows the unreachable-error path.
+- **Live (manual, Ollama up):** SC-AI-1 / SC-AI-2 / SC-AI-3 on the existing fixtures.
 
 ## What this plan will not do
 
@@ -187,6 +190,6 @@ Anything in SPEC-AI §4: tools, alarms, watch loops, chat follow-ups, auto-fix P
 
 1. Schema + pack builder + unit tests (no provider).
 2. Stub provider + Explain action + UI list + stub e2e (SC-AI-4, SC-AI-5 shape).
-3. Live xAI client behind `XAI_API_KEY`; missing key keeps P1–P7 green (SC-AI-6).
+3. Live Ollama client; daemon down keeps P1–P7 green (SC-AI-6).
 
 Next artifact to execute: [TASKS-AI.md](./TASKS-AI.md).

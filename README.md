@@ -5,7 +5,7 @@ Single-host control panel for Docker Compose stacks. You paste a **public Git UR
 There is **no login**. Anyone who can reach the panel has full control (Docker socket + `docker exec`). Do not expose it to the internet.
 
 Product spec: [SPEC-0.md](./SPEC-0.md). Implementation: [PLAN.md](./PLAN.md).  
-AI diagnosis (not implemented yet): [SPEC-AI.md](./SPEC-AI.md), [PLAN-AI.md](./PLAN-AI.md).
+AI diagnosis (not implemented yet): [SPEC-AI.md](./SPEC-AI.md), [PLAN-AI.md](./PLAN-AI.md) — local Ollama, not xAI.
 
 ## Requirements
 

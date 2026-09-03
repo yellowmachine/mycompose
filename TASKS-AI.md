@@ -2,7 +2,7 @@
 
 **Input:** [SPEC-AI.md](./SPEC-AI.md), [PLAN-AI.md](./PLAN-AI.md), [CONSTITUTION.md](./CONSTITUTION.md)
 
-**Rules:** Do not add tools, cron, alarms, or mutating model actions. P1–P7 of SPEC-0 must keep passing without `XAI_API_KEY`. Implement in phase order.
+**Rules:** Do not add tools, cron, alarms, or mutating model actions. P1–P7 of SPEC-0 must keep passing without Ollama running. Implement in phase order. Live inference is **local Ollama**, not xAI.
 
 **Format:** `- [ ] [ID] [P?] [Story?] Description with file path`
 
@@ -12,7 +12,7 @@
 
 **Goal:** Pack builder is testable with no network and no UI.
 
-- [ ] A001 Add `deploy_explanations` to `src/lib/server/db/schema.ts` (checks, index, cascade) and generate a Drizzle migration under `drizzle/`
+- [x] A001 Add `deploy_explanations` to `src/lib/server/db/schema.ts` (checks, index, cascade) and generate a Drizzle migration under `drizzle/`
 - [ ] A002 [P] Zod explanation schema + json_schema helper in `src/lib/server/ai/schema.ts` (`cause_class`, `summary`, `evidence`, `next_checks`, `confidence`)
 - [ ] A003 [P] Evidence pack builder `src/lib/server/ai/evidence.ts`: keys-only env, log head+tail (32 KiB / 32 KiB), optional compose excerpt ≤ 64 KiB via `resolveInside`, optional runtime snapshot, optional `compose logs --tail 200` (5s, no follow)
 - [ ] A004 Pack unit tests `tests/unit/evidence.test.ts`: env values never appear; empty log detected; path escape rejected; truncation flags set
@@ -28,7 +28,7 @@
 **Independent test:** SPEC-AI US AI-1 — invalid-compose fixture, stub provider, `cause_class` compose (or config); `docker compose ps` same before/after.
 
 - [ ] A005 Stub provider `src/lib/server/ai/stub.ts` when `MYCOMPOSE_AI_STUB=1` (keyword → cause class; never calls the network)
-- [ ] A006 Orchestrator `src/lib/server/ai/explain.ts`: empty log / missing key errors; otherwise pack → provider → insert
+- [ ] A006 Orchestrator `src/lib/server/ai/explain.ts`: empty log / Ollama unreachable errors; otherwise pack → provider → insert
 - [ ] A007 `?/explain` on `src/routes/apps/[slug]/deploys/[id]/+page.server.ts`; load explanations newest first; action does not update apps/deploys/env
 - [ ] A008 UI on `src/routes/apps/[slug]/deploys/[id]/+page.svelte`: Explain button (enabled while pending/deploying); list of explanations; error if unconfigured
 - [ ] A009 E2E `tests/e2e/explain.e2e.ts` with `MYCOMPOSE_AI_STUB=1`: invalid compose → Explain → compose/config class; log_text unchanged; second Explain adds a newer row
@@ -47,21 +47,21 @@
 
 ---
 
-## Phase A3: Live SpaceXAI client
+## Phase A3: Live Ollama client
 
-**Goal:** Real key uses `grok-4.6`; no key keeps the panel usable.
+**Goal:** Local Ollama uses `llama3.2` (or `OLLAMA_MODEL`); daemon down keeps the panel usable.
 
-- [ ] A013 Provider `src/lib/server/ai/provider.ts`: `openai` + `baseURL https://api.x.ai/v1`, model `XAI_MODEL` or `grok-4.6`, json_schema, 60s timeout, no tools
-- [ ] A014 Wire stub vs live in `explain.ts`; missing `XAI_API_KEY` and stub off → visible error, no row
-- [ ] A015 `.env.example` documents `XAI_API_KEY`, `XAI_MODEL`, `MYCOMPOSE_AI_STUB`
-- [ ] A016 Confirm `bun run test:unit` and existing e2e still pass without a key (SC-AI-6)
-- [ ] A017 Manual (has key): fixtures invalid-compose / missing path / bad URL → SC-AI-1..3
+- [ ] A013 Provider `src/lib/server/ai/provider.ts`: `openai` + `baseURL` `OLLAMA_BASE_URL` (default `http://127.0.0.1:11434/v1`), model `OLLAMA_MODEL` or `llama3.2`, JSON + Zod, 120s timeout, no tools
+- [ ] A014 Wire stub vs live in `explain.ts`; stub off and Ollama down → visible error, no row
+- [ ] A015 `.env.example` documents `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `MYCOMPOSE_AI_STUB`
+- [ ] A016 Confirm `bun run test:unit` and existing e2e still pass without Ollama (SC-AI-6)
+- [ ] A017 Manual (Ollama up): fixtures invalid-compose / missing path / bad URL → SC-AI-1..3
 
 ---
 
 ## Polish
 
-- [ ] A018 README: Explain needs `XAI_API_KEY` (or stub); panel works without it
+- [ ] A018 README: Explain needs Ollama (or stub); panel works without it
 - [ ] A019 `bun run check` and `bun run lint` clean
 
 ---
@@ -72,7 +72,7 @@
 A0 (schema + pack)
   → A1 stub Explain (US AI-1) 🎯
       → A2 history UI (mostly the same page)
-      → A3 live xAI client
+      → A3 live Ollama client
           → polish
 ```
 

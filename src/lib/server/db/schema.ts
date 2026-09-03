@@ -13,9 +13,22 @@ import {
 
 export const APP_STATUSES = ['draft', 'deploying', 'running', 'stopped', 'failed'] as const;
 export const DEPLOY_STATUSES = ['pending', 'deploying', 'succeeded', 'failed'] as const;
+export const CAUSE_CLASSES = [
+	'git',
+	'compose',
+	'build',
+	'image',
+	'port',
+	'runtime',
+	'config',
+	'unknown'
+] as const;
+export const CONFIDENCE_LEVELS = ['low', 'medium', 'high'] as const;
 
 export type AppStatus = (typeof APP_STATUSES)[number];
 export type DeployStatus = (typeof DEPLOY_STATUSES)[number];
+export type CauseClass = (typeof CAUSE_CLASSES)[number];
+export type ConfidenceLevel = (typeof CONFIDENCE_LEVELS)[number];
 
 export const apps = pgTable(
 	'apps',
@@ -78,5 +91,31 @@ export const deploys = pgTable(
 		uniqueIndex('deploys_inflight_uidx')
 			.on(t.appId)
 			.where(sql`${t.status} in ('pending','deploying')`)
+	]
+);
+
+export const deployExplanations = pgTable(
+	'deploy_explanations',
+	{
+		id: uuid('id').primaryKey().defaultRandom(),
+		deployId: uuid('deploy_id')
+			.notNull()
+			.references(() => deploys.id, { onDelete: 'cascade' }),
+		causeClass: text('cause_class').notNull().$type<CauseClass>(),
+		summary: text('summary').notNull(),
+		evidence: jsonb('evidence').notNull().$type<string[]>().default([]),
+		nextChecks: jsonb('next_checks').notNull().$type<string[]>().default([]),
+		confidence: text('confidence').notNull().$type<ConfidenceLevel>(),
+		model: text('model').notNull(),
+		raw: text('raw'),
+		createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+	},
+	(t) => [
+		check(
+			'deploy_explanations_cause_check',
+			sql`${t.causeClass} in ('git','compose','build','image','port','runtime','config','unknown')`
+		),
+		check('deploy_explanations_confidence_check', sql`${t.confidence} in ('low','medium','high')`),
+		index('deploy_explanations_deploy_created_idx').on(t.deployId, t.createdAt.desc())
 	]
 );
