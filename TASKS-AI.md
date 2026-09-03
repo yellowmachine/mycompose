@@ -28,7 +28,7 @@
 **Independent test:** SPEC-AI US AI-1 — invalid-compose fixture, stub provider, `cause_class` compose (or config); `docker compose ps` same before/after.
 
 - [x] A005 Stub provider `src/lib/server/ai/stub.ts` when `MYCOMPOSE_AI_STUB=1` (keyword → cause class; never calls the network)
-- [ ] A006 Orchestrator `src/lib/server/ai/explain.ts`: empty log / Ollama unreachable errors; otherwise pack → provider → insert
+- [x] A006 Orchestrator `src/lib/server/ai/explain.ts`: empty log / Ollama unreachable errors; otherwise pack → provider → insert
 - [ ] A007 `?/explain` on `src/routes/apps/[slug]/deploys/[id]/+page.server.ts`; load explanations newest first; action does not update apps/deploys/env
 - [ ] A008 UI on `src/routes/apps/[slug]/deploys/[id]/+page.svelte`: Explain button (enabled while pending/deploying); list of explanations; error if unconfigured
 - [ ] A009 E2E `tests/e2e/explain.e2e.ts` with `MYCOMPOSE_AI_STUB=1`: invalid compose → Explain → compose/config class; log_text unchanged; second Explain adds a newer row

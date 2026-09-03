@@ -13,6 +13,14 @@ export function dockerSock(): string {
 	return process.env.DOCKER_SOCK || '/var/run/docker.sock';
 }
 
+export function ollamaBaseUrl(): string {
+	return (process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434/v1').replace(/\/$/, '');
+}
+
+export function ollamaModel(): string {
+	return process.env.OLLAMA_MODEL || 'llama3.2';
+}
+
 export function appDataDir(slug: string): string {
 	return path.join(dataDir(), 'apps', slug);
 }
