@@ -15,6 +15,7 @@ On the host:
 - Git
 - Docker Engine with the Compose **v2** plugin (`docker compose version`)
 - Your user able to talk to `/var/run/docker.sock` (usually the `docker` group)
+- Optional: [Ollama](https://ollama.com) with model **`llama3.2`** (only for **Explain**)
 
 Postgres 16 is started with the repo `compose.yaml`. You do not need a local Postgres install.
 
@@ -30,13 +31,26 @@ bun run dev               # http://localhost:5173
 
 Open [http://localhost:5173](http://localhost:5173). `bun run dev` also starts a small WebSocket helper on `127.0.0.1:5174` (used by the in-browser terminal).
 
-| Variable                    | Default                                                   | Purpose                                 |
-| --------------------------- | --------------------------------------------------------- | --------------------------------------- |
-| `DATABASE_URL`              | `postgres://mycompose:mycompose@localhost:5433/mycompose` | Panel database                          |
-| `MYCOMPOSE_DATA_DIR`        | `./data`                                                  | Clone + env-file directory              |
-| `DOCKER_SOCK`               | `/var/run/docker.sock`                                    | Engine socket                           |
-| `MYCOMPOSE_ALLOW_LOCAL_GIT` | `0`                                                       | `1` allows a local path / `file://` URL |
-| `ORIGIN`                    | `http://localhost:5173`                                   | Public origin for the panel             |
+| Variable                    | Default                                                   | Purpose                                  |
+| --------------------------- | --------------------------------------------------------- | ---------------------------------------- |
+| `DATABASE_URL`              | `postgres://mycompose:mycompose@localhost:5433/mycompose` | Panel database                           |
+| `MYCOMPOSE_DATA_DIR`        | `./data`                                                  | Clone + env-file directory               |
+| `DOCKER_SOCK`               | `/var/run/docker.sock`                                    | Engine socket                            |
+| `MYCOMPOSE_ALLOW_LOCAL_GIT` | `0`                                                       | `1` allows a local path / `file://` URL  |
+| `ORIGIN`                    | `http://localhost:5173`                                   | Public origin for the panel              |
+| `OLLAMA_BASE_URL`           | `http://127.0.0.1:11434/v1`                               | OpenAI-compatible Ollama API             |
+| `OLLAMA_MODEL`              | `llama3.2`                                                | Local chat model for **Explain**         |
+| `MYCOMPOSE_AI_STUB`         | `0`                                                       | `1` uses a keyword stub (e2e, no Ollama) |
+
+## Explain (local Ollama)
+
+Deploy diagnosis talks to **Ollama on this machine**, not xAI. Suggested model:
+
+```sh
+ollama pull llama3.2
+```
+
+Override with `OLLAMA_MODEL` if you already run another chat model (`llama3.1`, `qwen2.5`, …). The panel does not install or pull models. If Ollama is down, the rest of the panel still works; Explain fails with a visible error. Tests set `MYCOMPOSE_AI_STUB=1` and never call the daemon.
 
 ## Try a first deploy
 
