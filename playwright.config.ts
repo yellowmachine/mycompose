@@ -16,7 +16,8 @@ export default defineConfig({
 			...process.env,
 			DATABASE_URL: databaseUrl,
 			MYCOMPOSE_ALLOW_LOCAL_GIT: '1',
-			MYCOMPOSE_DATA_DIR: 'data-e2e'
+			MYCOMPOSE_DATA_DIR: 'data-e2e',
+			MYCOMPOSE_AI_STUB: '1'
 		}
 	},
 	use: {

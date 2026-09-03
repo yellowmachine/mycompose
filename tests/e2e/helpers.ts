@@ -26,6 +26,17 @@ export function downProject(slug: string) {
 	}
 }
 
+export function composePsJson(slug: string): string {
+	try {
+		return execSync(`docker compose -p mycompose-${slug} ps -a --format json`, {
+			encoding: 'utf8',
+			stdio: ['ignore', 'pipe', 'ignore']
+		}).trim();
+	} catch {
+		return '';
+	}
+}
+
 export async function removeRepo(repo: string) {
 	await rm(repo, { recursive: true, force: true });
 }

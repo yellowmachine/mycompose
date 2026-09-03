@@ -30,9 +30,9 @@
 - [x] A005 Stub provider `src/lib/server/ai/stub.ts` when `MYCOMPOSE_AI_STUB=1` (keyword → cause class; never calls the network)
 - [x] A006 Orchestrator `src/lib/server/ai/explain.ts`: empty log / Ollama unreachable errors; otherwise pack → provider → insert
 - [x] A007 `?/explain` on `src/routes/apps/[slug]/deploys/[id]/+page.server.ts`; load explanations newest first; action does not update apps/deploys/env
-- [ ] A008 UI on `src/routes/apps/[slug]/deploys/[id]/+page.svelte`: Explain button (enabled while pending/deploying); list of explanations; error if unconfigured
-- [ ] A009 E2E `tests/e2e/explain.e2e.ts` with `MYCOMPOSE_AI_STUB=1`: invalid compose → Explain → compose/config class; log_text unchanged; second Explain adds a newer row
-- [ ] A010 E2E or assertion: `docker compose -p mycompose-<slug> ps` identical before/after Explain (SC-AI-5)
+- [x] A008 UI on `src/routes/apps/[slug]/deploys/[id]/+page.svelte`: Explain button (enabled while pending/deploying); list of explanations; error if unconfigured
+- [x] A009 E2E `tests/e2e/explain.e2e.ts` with `MYCOMPOSE_AI_STUB=1`: invalid compose → Explain → compose/config class; log_text unchanged; second Explain adds a newer row
+- [x] A010 E2E or assertion: `docker compose -p mycompose-<slug> ps` identical before/after Explain (SC-AI-5)
 
 **Stop here until the stub independent test is true.**
 
@@ -42,8 +42,8 @@
 
 **Goal:** Newest explanation is obvious; re-explain does not rewrite the deploy log.
 
-- [ ] A011 [AI-2] Render cause class, summary, evidence quotes, next checks, model, timestamp; newest first
-- [ ] A012 [AI-2] Covered by A009 second Explain; no extra table
+- [x] A011 [AI-2] Render cause class, summary, evidence quotes, next checks, model, timestamp; newest first
+- [x] A012 [AI-2] Covered by A009 second Explain; no extra table
 
 ---
 
