@@ -5,7 +5,7 @@ Single-host control panel for Docker Compose stacks. You paste a **public Git UR
 There is **no login**. Anyone who can reach the panel has full control (Docker socket + `docker exec`). Do not expose it to the internet.
 
 Product spec: [SPEC-0.md](./SPEC-0.md). Implementation: [PLAN.md](./PLAN.md).  
-AI diagnosis (not implemented yet): [SPEC-AI.md](./SPEC-AI.md), [PLAN-AI.md](./PLAN-AI.md) — local Ollama, not xAI.
+AI diagnosis: [SPEC-AI.md](./SPEC-AI.md), [PLAN-AI.md](./PLAN-AI.md) — local Ollama, not xAI.
 
 ## Requirements
 
@@ -44,13 +44,14 @@ Open [http://localhost:5173](http://localhost:5173). `bun run dev` also starts a
 
 ## Explain (local Ollama)
 
-Deploy diagnosis talks to **Ollama on this machine**, not xAI. Suggested model:
+**Explain** on a deploy log page asks a local model to classify the failure. The panel still runs if Ollama is missing: lists, deploys, logs, stats, and the terminal work; only Explain shows an error.
 
 ```sh
+ollama serve
 ollama pull llama3.2
 ```
 
-Override with `OLLAMA_MODEL` if you already run another chat model (`llama3.1`, `qwen2.5`, …). The panel does not install or pull models. If Ollama is down, the rest of the panel still works; Explain fails with a visible error. Tests set `MYCOMPOSE_AI_STUB=1` and never call the daemon.
+Then open a deploy → **Explain**. Suggested model is **`llama3.2`** (`OLLAMA_MODEL`). The panel does not install or pull models. Tests set `MYCOMPOSE_AI_STUB=1` and never call the daemon. Env **values** are never sent to the model.
 
 ## Try a first deploy
 

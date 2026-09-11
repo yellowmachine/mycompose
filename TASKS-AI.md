@@ -51,18 +51,18 @@
 
 **Goal:** Local Ollama uses `llama3.2` (or `OLLAMA_MODEL`); daemon down keeps the panel usable.
 
-- [ ] A013 Provider `src/lib/server/ai/provider.ts`: `openai` + `baseURL` `OLLAMA_BASE_URL` (default `http://127.0.0.1:11434/v1`), model `OLLAMA_MODEL` or `llama3.2`, JSON + Zod, 120s timeout, no tools
-- [ ] A014 Wire stub vs live in `explain.ts`; stub off and Ollama down → visible error, no row
-- [ ] A015 `.env.example` documents `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `MYCOMPOSE_AI_STUB`
-- [ ] A016 Confirm `bun run test:unit` and existing e2e still pass without Ollama (SC-AI-6)
-- [ ] A017 Manual (Ollama up): fixtures invalid-compose / missing path / bad URL → SC-AI-1..3
+- [x] A013 Provider `src/lib/server/ai/provider.ts`: `openai` + `baseURL` `OLLAMA_BASE_URL` (default `http://127.0.0.1:11434/v1`), model `OLLAMA_MODEL` or `llama3.2`, JSON + Zod, 120s timeout, no tools
+- [x] A014 Wire stub vs live in `explain.ts`; stub off and Ollama down → visible error, no row
+- [x] A015 `.env.example` documents `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `MYCOMPOSE_AI_STUB`
+- [x] A016 Confirm `bun run test:unit` and existing e2e still pass without Ollama (SC-AI-6)
+- [x] A017 Manual (Ollama up): fixtures invalid-compose / missing path / bad URL → SC-AI-1..3
 
 ---
 
 ## Polish
 
-- [ ] A018 README: Explain needs Ollama (or stub); panel works without it
-- [ ] A019 `bun run check` and `bun run lint` clean
+- [x] A018 README: Explain needs Ollama (or stub); panel works without it
+- [x] A019 `bun run check` and `bun run lint` clean
 
 ---
 
